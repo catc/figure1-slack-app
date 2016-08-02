@@ -54,34 +54,32 @@ func (o *Oembed) caseHandler(res http.ResponseWriter, req *http.Request) {
 
 	if err := req.ParseForm(); err != nil {
 		log.Printf("Error parsing form: %s", err)
+		http.Error(res, "Internal error", http.StatusInternalServerError)
 		return
 	}
 	q.token = req.Form.Get("token")
 	q.text = req.Form.Get("text")
 
 	if q.token != o.Token {
-		fmt.Println("Token does not match")
+		http.Error(res, "Tokens did not match", http.StatusInternalServerError)
 		return
 	}
 
 	// get case id
 	var id string
 	if id = getCaseId(q.text); id == "" {
-		fmt.Println("Could not find the case id, try again")
-		// TODO - send back invalid response
+		http.Error(res, "Could not find the case id, try again", 400)
+		return
 	}
 
 	// get case
 	data, err := o.getCase(id)
 	if err != nil {
-		// TODO - send back invalid response
-		fmt.Println("ERROR TRYING TO GET CASE", err)
+		http.Error(res, err.Error(), 400)
 		return
 	}
 
-	formatSlackResponse(&data)
-
-	// TODO - send back valid response
+	slackResponse(res, &data)
 }
 
 func getCaseId(text string) (id string) {
@@ -111,19 +109,3 @@ func getCaseId(text string) (id string) {
 	}
 	return id
 }
-
-/*
-	TODO
-	- need error handler
-	- wildcard route
-	- account for > 3 sec delay (slack timeout?)
-	- error handler for response
-		- if:
-			- could not find case
-			- imageid is incorrect
-			- cant parse link
-			- etc
-	- add credentials/config file
-		- to store passwords for fig1
-		- to store slack token
-*/

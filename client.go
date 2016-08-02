@@ -9,12 +9,23 @@ import (
 	"net/http"
 )
 
-// var bearer string = "Bearer 52f85c59d2a5aa387eb5f1b83f6eae941c0c60709d4b57363d9aa966052e3570"
-
 type f1Case struct {
-	Caption string
+	Id           string `json:"_id"`
+	Caption      string `json:"caption"`
+	IsPagingCase bool   `json:"isPagingCase"`
 
-	// finish populating fields...
+	// stats
+	ImageViews   string `json:"imageViews"`
+	Followers    int    `json:"followers"`
+	CommentCount int    `json:"CommentCount"`
+	VoteCount    int    `json:"voteCount"`
+
+	// author
+	Author struct {
+		Username       string `json:"username"`
+		TopContributor bool   `json:"topContributor"`
+		Verified       bool   `json:"verified"`
+	}
 }
 
 func (o *Oembed) getCase(id string) (f1Case, error) {
