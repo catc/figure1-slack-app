@@ -18,13 +18,16 @@ const ADDRESS = "localhost:" + PORT
 var config configuration
 
 type configuration struct {
-	Username string
-	Password string
-	Token    string
+	Email       string
+	Password    string
+	Token       string
+	BearerToken string
 }
 
 func main() {
 	setupConf()
+
+	getBearerToken()
 
 	http.HandleFunc("/case", caseHandler)
 
@@ -75,7 +78,8 @@ func caseHandler(res http.ResponseWriter, req *http.Request) {
 	}
 
 	// get case
-	getCase(id)
+	data := getCase(id)
+	formatSlackResponse(&data)
 }
 
 func getCaseId(text string) (id string) {
