@@ -34,8 +34,6 @@ func slackResponse(res http.ResponseWriter, data *f1Case) {
 	authorSection := Attachment{
 		Title:     data.Author.Username,
 		TitleLink: linkgen("user", data.Author.Username),
-		PreText:   "*Figure 1 Case*",
-		Markdown:  []string{"pretext"},
 	}
 	if data.Author.TopContributor {
 		authorSection.Footer = "Top Contributor"
