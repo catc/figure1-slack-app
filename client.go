@@ -3,51 +3,65 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
 )
 
+// var bearer string = "Bearer 52f85c59d2a5aa387eb5f1b83f6eae941c0c60709d4b57363d9aa966052e3570"
+
 type f1Case struct {
 	Caption string
+
+	// finish populating fields...
 }
 
-func getCase(id string) f1Case {
-	fmt.Printf("getting case with id %v", id)
+func (o *Oembed) getCase(id string) (f1Case, error) {
+	var body f1Case
 
 	url := "https://app.figure1.com/s/case/" + id
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Add("Content-Type", "application/json")
-	// req.Header.Add("Authorization", bearer) // TODO - replace
-	req.Header.Add("Authorization", config.BearerToken) // TODO - replace
+	req.Header.Add("Authorization", o.BearerToken)
 
 	// make the request
 	client := &http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
-		// TODO - deal with error
-		fmt.Println(err)
+		return body, errors.New("Failed to create case http request")
 	}
 	defer res.Body.Close()
 
-	var body f1Case
-	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
-		fmt.Println(err)
+	if res.StatusCode == http.StatusUnauthorized {
+		fmt.Println("Need to relog")
+		if err = o.getBearerToken(); err == nil {
+			return o.getCase(id)
+		}
+
+		return body, errors.New("Failed to refresh bearer token")
 	}
 
-	fmt.Println("GOT THE CASE!", body.Caption)
-	/*
-		TODO - handle errors
-	*/
-	return body
+	if res.StatusCode != http.StatusOK {
+		fmt.Println("Failed to retrieve case")
+		return body, errors.New("Failed to retrieve case, please try again later")
+	}
+
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		fmt.Println("Failed to decode json, ", err)
+		return body, err
+	}
+
+	return body, nil
 }
 
-func getBearerToken() {
+func (o *Oembed) getBearerToken() error {
 	reqBody := struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}{
-		config.Email,
-		config.Password,
+		o.Email,
+		o.Password,
 	}
 	reqJSON, err := json.Marshal(reqBody)
 	if err != nil {
@@ -65,6 +79,11 @@ func getBearerToken() {
 
 	if err != nil {
 		fmt.Println("Failed to connect to Figure 1 API, ", err)
+		return errors.New("Failed to connect to Figure 1 API. Try again later.")
+	}
+
+	if res.StatusCode != http.StatusOK {
+		log.Fatal("Failed to retrieve bearer token: Incorrect credentials")
 	}
 
 	// handle response
@@ -74,13 +93,9 @@ func getBearerToken() {
 	var resBody resp
 	if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
 		fmt.Println("Failed to decode response body, ", err)
+		return errors.New("Failed to decode bearer response body")
 	}
 
-	config.BearerToken = resBody.Token
-	fmt.Println(config.BearerToken)
-
-	/*
-		NEED:
-		- incorrect credentials handling
-	*/
+	o.BearerToken = resBody.Token
+	return nil
 }

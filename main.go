@@ -1,12 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-
-	// ...
-	"encoding/json"
 	"net/url"
 	"os"
 	"strings"
@@ -15,9 +13,7 @@ import (
 const PORT = "3200"
 const ADDRESS = "localhost:" + PORT
 
-var config configuration
-
-type configuration struct {
+type Oembed struct {
 	Email       string
 	Password    string
 	Token       string
@@ -25,11 +21,10 @@ type configuration struct {
 }
 
 func main() {
-	setupConf()
+	oembed := initOembed()
+	_ = oembed.getBearerToken()
 
-	getBearerToken()
-
-	http.HandleFunc("/case", caseHandler)
+	http.HandleFunc("/case", oembed.caseHandler)
 
 	fmt.Println("Figure 1 case oembed listening on " + ADDRESS)
 	if err := http.ListenAndServe(ADDRESS, nil); err != nil {
@@ -37,20 +32,20 @@ func main() {
 	}
 }
 
-func setupConf() {
+func initOembed() Oembed {
 	file, err := os.Open("conf.json")
 	if err != nil {
 		log.Fatal(err)
 	}
 	decoder := json.NewDecoder(file)
-	c := configuration{}
-	if err = decoder.Decode(&c); err != nil {
+	o := Oembed{}
+	if err = decoder.Decode(&o); err != nil {
 		log.Fatal("error loading config.json", err)
 	}
-	config = c
+	return o
 }
 
-func caseHandler(res http.ResponseWriter, req *http.Request) {
+func (o *Oembed) caseHandler(res http.ResponseWriter, req *http.Request) {
 	type query struct {
 		token string
 		text  string
@@ -64,7 +59,7 @@ func caseHandler(res http.ResponseWriter, req *http.Request) {
 	q.token = req.Form.Get("token")
 	q.text = req.Form.Get("text")
 
-	if q.token != config.Token {
+	if q.token != o.Token {
 		fmt.Println("Token does not match")
 		return
 	}
@@ -73,13 +68,20 @@ func caseHandler(res http.ResponseWriter, req *http.Request) {
 	var id string
 	if id = getCaseId(q.text); id == "" {
 		fmt.Println("Could not find the case id, try again")
-	} else {
-		fmt.Println("id is ", id)
+		// TODO - send back invalid response
 	}
 
 	// get case
-	data := getCase(id)
+	data, err := o.getCase(id)
+	if err != nil {
+		// TODO - send back invalid response
+		fmt.Println("ERROR TRYING TO GET CASE", err)
+		return
+	}
+
 	formatSlackResponse(&data)
+
+	// TODO - send back valid response
 }
 
 func getCaseId(text string) (id string) {
