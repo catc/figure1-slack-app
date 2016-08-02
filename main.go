@@ -11,7 +11,7 @@ import (
 )
 
 const PORT = "3200"
-const ADDRESS = "localhost:" + PORT
+const ADDRESS = ":" + PORT
 
 type Oembed struct {
 	Email       string
@@ -94,18 +94,25 @@ func getCaseId(text string) (id string) {
 
 		// parse url, 2 types of links (page url and share link)
 		query := u.Query()
-		idAttempt := query.Get("imageid")
-		if idAttempt != "" && len(idAttempt) == 24 {
-			// is share link
-			id = idAttempt
-		} else {
+		imageid := query.Get("imageid")
+		image := query.Get("image")
+
+		switch {
+		case len(imageid) == 24:
+			// is modal link
+			id = imageid
+		case len(image) == 24:
 			// is web app url
+			id = image
+		default:
+			// is share link
 			path := strings.Split(u.EscapedPath(), "/")
-			idAttempt = path[len(path)-1]
+			idAttempt := path[len(path)-1]
 			if len(idAttempt) == 24 {
 				id = idAttempt
 			}
 		}
 	}
+
 	return id
 }

@@ -9,7 +9,7 @@ import (
 
 type SlackResponse struct {
 	ResponseType string       `json:"response_type"`
-	Username     string       `json:"username"`
+	Text         string       `json:"text,omitempty"`
 	Attachments  []Attachment `json:"attachments"`
 }
 
@@ -17,6 +17,7 @@ type Attachment struct {
 	Title      string   `json:"title,omitempty"`
 	TitleLink  string   `json:"title_link,omitempty"`
 	Text       string   `json:"text,omitempty"`
+	PreText    string   `json:"pretext,omitempty"`
 	ThumbUrl   string   `json:"thumb_url,omitempty"`
 	Footer     string   `json:"footer,omitempty"`
 	FooterIcon string   `json:"footer_icon,omitempty"`
@@ -27,13 +28,14 @@ type Attachment struct {
 func slackResponse(res http.ResponseWriter, data *f1Case) {
 	resp := &SlackResponse{
 		ResponseType: "in_channel",
-		Username:     "Figure 1 Case",
 	}
 
 	// author
 	authorSection := Attachment{
 		Title:     data.Author.Username,
 		TitleLink: linkgen("user", data.Author.Username),
+		PreText:   "*Figure 1 Case*",
+		Markdown:  []string{"pretext"},
 	}
 	if data.Author.TopContributor {
 		authorSection.Footer = "Top Contributor"
@@ -46,11 +48,12 @@ func slackResponse(res http.ResponseWriter, data *f1Case) {
 
 	// case info
 	caseInfoSection := Attachment{
-		TitleLink: linkgen("user", data.Id),
+		ThumbUrl: linkgen("image", data.Id),
 	}
 	split := strings.Split(data.Caption, " ")
-	if len(split) > 36 {
-		caseInfoSection.Text = strings.Join(split[0:36], " ") + "..."
+	const limit int = 36
+	if len(split) > limit {
+		caseInfoSection.Text = strings.Join(split[0:limit], " ") + "..."
 	} else {
 		caseInfoSection.Text = data.Caption
 	}
