@@ -68,6 +68,7 @@ func (o *Oembed) caseHandler(res http.ResponseWriter, req *http.Request) {
 	// get case id
 	var id string
 	if id = getCaseId(q.text); id == "" {
+		fmt.Println("Could not parse case id: ", q.text)
 		http.Error(res, "Could not find the case id, try again", 400)
 		return
 	}
@@ -89,7 +90,8 @@ func getCaseId(text string) (id string) {
 		u, err := url.Parse(text)
 
 		if err != nil || u.Host == "" {
-			fmt.Println("Could not parse url: ", text)
+			fmt.Println("Failed to parse url: ", q.text)
+			return ""
 		}
 
 		// parse url, 2 types of links (page url and share link)

@@ -15,6 +15,7 @@ type SlackResponse struct {
 
 type Attachment struct {
 	Title      string   `json:"title,omitempty"`
+	Fallback   string   `json:"fallback,omitempty"`
 	TitleLink  string   `json:"title_link,omitempty"`
 	Text       string   `json:"text,omitempty"`
 	PreText    string   `json:"pretext,omitempty"`
@@ -50,11 +51,14 @@ func slackResponse(res http.ResponseWriter, data *f1Case) {
 	}
 	split := strings.Split(data.Caption, " ")
 	const limit int = 36
+	var caption string
 	if len(split) > limit {
-		caseInfoSection.Text = strings.Join(split[0:limit], " ") + "..."
+		caption = strings.Join(split[0:limit], " ") + "..."
 	} else {
-		caseInfoSection.Text = data.Caption
+		caption = data.Caption
 	}
+	caseInfoSection.Fallback = caption
+	caseInfoSection.Text = caption
 	caseInfoSection.Footer = strings.Join([]string{
 		data.ImageViews,
 		strconv.Itoa(data.VoteCount) + " stars",
