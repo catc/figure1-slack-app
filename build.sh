@@ -1,5 +1,13 @@
-#! /usr/bin/env bash
+#!/bin/sh
 
-export PATH=$PATH:/usr/local/go/bin
+OUTPUT="fig1-oembed"
 
-go build -o fig1-oembed *.go
+if [ -e "./$OUTPUT" ];
+then
+	echo "Suffixing old build wiht '-old'"
+	mv $OUTPUT $OUTPUT-old
+fi
+
+go build -o $OUTPUT *.go
+
+echo "Done building as '$OUTPUT'"

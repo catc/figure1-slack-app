@@ -90,7 +90,7 @@ func getCaseId(text string) (id string) {
 		u, err := url.Parse(text)
 
 		if err != nil || u.Host == "" {
-			fmt.Println("Failed to parse url: ", q.text)
+			fmt.Println("Failed to parse url: ", text)
 			return ""
 		}
 
