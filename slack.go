@@ -10,7 +10,7 @@ import (
 type SlackResponse struct {
 	ResponseType string       `json:"response_type"`
 	Text         string       `json:"text,omitempty"`
-	Attachments  []Attachment `json:"attachments"`
+	Attachments  []*Attachment `json:"attachments"`
 }
 
 type Attachment struct {
@@ -43,7 +43,7 @@ func slackResponse(res http.ResponseWriter, data *f1Case) {
 		authorSection.Footer = "Verified"
 		authorSection.FooterIcon = "http://i.imgur.com/9eyI61P.jpg"
 	}
-	resp.Attachments = append(resp.Attachments, authorSection)
+	resp.Attachments = append(resp.Attachments, &authorSection)
 
 	// case info
 	caseInfoSection := Attachment{
@@ -57,7 +57,7 @@ func slackResponse(res http.ResponseWriter, data *f1Case) {
 	} else {
 		caption = data.Caption
 	}
-	caseInfoSection.Fallback = caption
+	authorSection.Fallback = "FIGURE 1 CASE: " + caption
 	caseInfoSection.Text = caption
 	caseInfoSection.Footer = strings.Join([]string{
 		data.ImageViews,
@@ -65,7 +65,7 @@ func slackResponse(res http.ResponseWriter, data *f1Case) {
 		strconv.Itoa(data.CommentCount) + " comments",
 		strconv.Itoa(data.Followers) + " followers",
 	}, ", ")
-	resp.Attachments = append(resp.Attachments, caseInfoSection)
+	resp.Attachments = append(resp.Attachments, &caseInfoSection)
 
 	// share links
 	shareSection := Attachment{
@@ -73,7 +73,7 @@ func slackResponse(res http.ResponseWriter, data *f1Case) {
 		Text:  linkgen("case", data.Id),
 		Color: "#8bcaf1",
 	}
-	resp.Attachments = append(resp.Attachments, shareSection)
+	resp.Attachments = append(resp.Attachments, &shareSection)
 
 	res.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(res).Encode(resp)
