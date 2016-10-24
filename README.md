@@ -4,10 +4,12 @@ Provides Figure 1 case oembed on slack.
 
 ## Configuration
 Create `conf.json` file with structure:
+
 ```
 {
 	"email": "EMAIL",
 	"password": "PASSWORD",
-	"token": "SLACK_TOKEN"
+	"case_integration_token": "SLACK_TOKEN",
+	"user_integration_token": "SLACK_TOKEN"
 }
 ```

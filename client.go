@@ -28,6 +28,42 @@ type f1Case struct {
 	}
 }
 
+type f1User struct {
+	Id             string `json:"_id"`
+	Username       string `json:"username"`
+	Verified       bool   `json:"verified"`
+	TopContributor bool   `json:"topContributor"`
+	Category       string
+	Specialty      string
+
+	// extra info
+	Country        string `json:"country"`
+	ProfileCountry string `json:"profileCountry"`
+	FullName       string `json:"fullName"`
+	Institution    string `json:"institution"`
+	Bio            string `json:"bio"`
+	Link           string `json:"link"`
+
+	// specialty object
+	SpecialtyObject struct {
+		Category struct {
+			Strings struct {
+				Label string `json:"label"`
+			} `json:"strings"`
+		} `json:"category"`
+		Strings struct {
+			Label string `json:"label"`
+		} `json:"strings"`
+	} `json:"specialtyObject"`
+
+	// stats
+	CommentsCount  int `json:"profileCommentsCount"`
+	FavoritesCount int `json:"profileFavoritesCount"`
+	FollowersCount int `json:"profileFollowersCount"`
+	FollowingCount int `json:"profileFollowingCount"`
+	UploadsCount   int `json:"profileUploadsCount"`
+}
+
 func (o *Oembed) getCase(id string) (f1Case, error) {
 	var body f1Case
 
@@ -62,6 +98,47 @@ func (o *Oembed) getCase(id string) (f1Case, error) {
 		fmt.Println("Failed to decode json, ", err)
 		return body, err
 	}
+
+	return body, nil
+}
+
+func (o *Oembed) getUser(username string) (f1User, error) {
+	var body f1User
+
+	url := "https://app.figure1.com/s/profile/public/" + username
+	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", o.BearerToken)
+
+	// make the request
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return body, errors.New("Failed to create case http request")
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode == http.StatusUnauthorized {
+		fmt.Println("Need to relog")
+		if err = o.getBearerToken(); err == nil {
+			return o.getUser(username)
+		}
+
+		return body, errors.New("Failed to refresh bearer token")
+	}
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Println("Failed to retrieve user profile")
+		return body, errors.New("Failed to retrieve user profile, please try again later")
+	}
+
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		fmt.Println("Failed to decode json, ", err)
+		return body, err
+	}
+
+	body.Category = body.SpecialtyObject.Category.Strings.Label
+	body.Specialty = body.SpecialtyObject.Strings.Label
 
 	return body, nil
 }
