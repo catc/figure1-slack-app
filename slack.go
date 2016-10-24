@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -105,7 +104,6 @@ func userLinkGen(username string) string {
 }
 
 func slackUserResponse(res http.ResponseWriter, data *f1User) {
-	fmt.Println("Data is", data)
 	resp := &SlackResponse{
 		ResponseType: "in_channel",
 	}
