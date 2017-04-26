@@ -64,7 +64,7 @@ type f1User struct {
 	UploadsCount   int `json:"profileUploadsCount"`
 }
 
-func (o *Oembed) getCase(id string) (f1Case, error) {
+func (o *SlackApp) getCase(id string) (f1Case, error) {
 	var body f1Case
 
 	url := "https://app.figure1.com/s/case/" + id
@@ -102,7 +102,7 @@ func (o *Oembed) getCase(id string) (f1Case, error) {
 	return body, nil
 }
 
-func (o *Oembed) getUser(username string) (f1User, error) {
+func (o *SlackApp) getUser(username string) (f1User, error) {
 	var body f1User
 
 	url := "https://app.figure1.com/s/profile/public/" + username
@@ -143,7 +143,7 @@ func (o *Oembed) getUser(username string) (f1User, error) {
 	return body, nil
 }
 
-func (o *Oembed) getBearerToken() error {
+func (o *SlackApp) getBearerToken() error {
 	reqBody := struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`

@@ -21,6 +21,11 @@ Create `conf.json` file with structure:
 - update readme.md to contain info how to set up correct slack permissions and steps
 - add error handler
 	- ephemeral message that displays error
+- flow
+	- handler, check token
+	- call the correct service with channel id + username
+	- service gets case/user/collection, responds with 204
+	- service calls another services that formats payload and sends off to slack api
 
 ## Adding slash commands
 ### Required permissions

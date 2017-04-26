@@ -14,7 +14,7 @@ const (
 	ADDRESS = ":" + PORT
 )
 
-type Oembed struct {
+type SlackApp struct {
 	Email       string
 	Password    string
 	BearerToken string
@@ -25,16 +25,17 @@ type Oembed struct {
 }
 
 func main() {
-	oembed := initOembed()
-	if err := oembed.getBearerToken(); err != nil {
+	slackApp := NewSlackApp()
+	if err := slackApp.getBearerToken(); err != nil {
 		log.Fatal("Failed to get bearer token, credentials are probably incorrect")
 	}
 
 	mux := http.NewServeMux()
 
 	// add any routes
-	mux.HandleFunc("/case", oembed.caseHandler)
-	mux.HandleFunc("/user", oembed.userHandler)
+	mux.HandleFunc("/case", slackApp.slashCommandHandler)
+	mux.HandleFunc("/user", slackApp.slashCommandHandler)
+	mux.HandleFunc("/collection", slackApp.slashCommandHandler)
 
 	server := &http.Server{
 		Addr:           ADDRESS,
@@ -44,23 +45,22 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	fmt.Println("Figure 1 case oembed listening on " + ADDRESS)
+	fmt.Println("Figure 1 slack app listening on " + ADDRESS)
 
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
 }
 
-// TODO - rename oembed
-func initOembed() Oembed {
+func NewSlackApp() SlackApp {
 	file, err := os.Open("conf.json")
 	if err != nil {
 		log.Fatal(err)
 	}
 	decoder := json.NewDecoder(file)
-	o := Oembed{}
-	if err = decoder.Decode(&o); err != nil {
+	sa := SlackApp{}
+	if err = decoder.Decode(&sa); err != nil {
 		log.Fatal("error loading config.json", err)
 	}
-	return o
+	return sa
 }
