@@ -23,7 +23,8 @@ func (o *Oembed) caseHandler(res http.ResponseWriter, req *http.Request) {
 	q.token = req.Form.Get("token")
 	q.text = req.Form.Get("text")
 
-	if q.token != o.CaseIntegrationToken {
+	if q.token != o.VerificationToken {
+		fmt.Println(q.token, o.VerificationToken)
 		http.Error(res, "Tokens did not match (case integration token)", http.StatusInternalServerError)
 		return
 	}
@@ -97,7 +98,7 @@ func (o *Oembed) userHandler(res http.ResponseWriter, req *http.Request) {
 	q.token = req.Form.Get("token")
 	q.text = req.Form.Get("text")
 
-	if q.token != o.UserIntegrationToken {
+	if q.token != o.VerificationToken {
 		http.Error(res, "Tokens did not match (user integration token)", http.StatusInternalServerError)
 		return
 	}

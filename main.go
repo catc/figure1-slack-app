@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	PORT    = "3200"
+	PORT    = "3400"
 	ADDRESS = ":" + PORT
 )
 
@@ -20,8 +20,8 @@ type Oembed struct {
 	BearerToken string
 
 	// integration tokens
-	CaseIntegrationToken string `json:"case_integration_token"`
-	UserIntegrationToken string `json:"user_integration_token"`
+	OAuthAccessToken  string `json:"oauth_access_token"`
+	VerificationToken string `json:"verification_token"`
 }
 
 func main() {
@@ -51,6 +51,7 @@ func main() {
 	}
 }
 
+// TODO - rename oembed
 func initOembed() Oembed {
 	file, err := os.Open("conf.json")
 	if err != nil {

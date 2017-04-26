@@ -1,10 +1,10 @@
 #!/bin/sh
 
-OUTPUT="fig1-oembed"
+OUTPUT="fig1-slack-app"
 
 if [ -e "./$OUTPUT" ];
 then
-	echo "Suffixing old build wiht '-old'"
+	echo "Suffixing old build with '-old'"
 	mv $OUTPUT $OUTPUT-old
 fi
 
