@@ -14,25 +14,26 @@ const (
 	ADDRESS = ":" + PORT
 )
 
+// SlackApp contains figure1 and slack tokens/secrets
 type SlackApp struct {
 	Email       string
 	Password    string
 	BearerToken string
 
-	// integration tokens
+	// slack tokens/secrets
 	OAuthAccessToken  string `json:"oauth_access_token"`
 	VerificationToken string `json:"verification_token"`
 }
 
 func main() {
-	slackApp := NewSlackApp()
+	slackApp := newSlackApp()
 	if err := slackApp.getBearerToken(); err != nil {
 		log.Fatal("Failed to get bearer token, credentials are probably incorrect")
 	}
 
 	mux := http.NewServeMux()
 
-	// add any routes
+	// add routes
 	mux.HandleFunc("/case", slackApp.slashCommandHandler)
 	mux.HandleFunc("/user", slackApp.slashCommandHandler)
 	mux.HandleFunc("/collection", slackApp.slashCommandHandler)
@@ -52,15 +53,15 @@ func main() {
 	}
 }
 
-func NewSlackApp() SlackApp {
+func newSlackApp() SlackApp {
 	file, err := os.Open("conf.json")
 	if err != nil {
 		log.Fatal(err)
 	}
 	decoder := json.NewDecoder(file)
-	sa := SlackApp{}
-	if err = decoder.Decode(&sa); err != nil {
+	app := SlackApp{}
+	if err = decoder.Decode(&app); err != nil {
 		log.Fatal("error loading config.json", err)
 	}
-	return sa
+	return app
 }

@@ -1,19 +1,18 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 )
 
 type slashCommandRequestBody struct {
-	Token     string `json:"token"`
-	ChannelID string `json:"channel_id"`
-	Username  string `json:"user_name"`
-	Text      string `json:"text"`
+	Token     string
+	ChannelID string
+	Username  string
+	Text      string
 }
 
-func (sa *SlackApp) slashCommandHandler(res http.ResponseWriter, req *http.Request) {
+func (app *SlackApp) slashCommandHandler(res http.ResponseWriter, req *http.Request) {
 	if req.Method != "POST" {
 		res.WriteHeader(http.StatusMethodNotAllowed)
 		return
@@ -24,33 +23,42 @@ func (sa *SlackApp) slashCommandHandler(res http.ResponseWriter, req *http.Reque
 	// check if handler exists for path
 	switch req.URL.Path {
 	case "/case":
-		handler = handleCase
+		handler = app.handleCase
 	case "/user":
-		handler = handleUser
+		handler = app.handleUser
 	case "/collection":
-		handler = handleCollection
+		handler = app.handleCollection
 	default:
 		http.Error(res, "Not found", http.StatusNotFound)
 		return
 	}
 
-	// decode body
-	var body slashCommandRequestBody
-	if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
-		fmt.Println("Failed to decode slash command json, ", err)
-		http.Error(res, "Failed to parse body", http.StatusBadRequest)
+	// parse form
+	if err := req.ParseForm(); err != nil {
+		msg := "Failed to parse body"
+		(&slackError{msg, msg, err}).handleError(res)
 		return
 	}
 
+	// body
+	body := slashCommandRequestBody{
+		Token:     req.FormValue("token"),
+		ChannelID: req.FormValue("channel_id"),
+		Username:  req.FormValue("user_name"),
+		Text:      req.FormValue("text"),
+	}
+
 	// check request token is valid
-	if body.Token != sa.VerificationToken {
-		http.Error(res, "Tokens did not match", http.StatusInternalServerError)
+	if body.Token != app.VerificationToken {
+		msg := fmt.Sprintf("Token provided did not match (token: %v)", body.Token)
+		(&slackError{"Token provided did not match", msg, nil}).handleError(res)
 		return
 	}
 
 	// more basic body validation
 	if body.ChannelID == "" || body.Username == "" || body.Text == "" {
-		http.Error(res, "Invalid request", http.StatusBadRequest)
+		msg := fmt.Sprintf("Invalid request body (channel: %v, username: %v, text: %v)", body.Token, body.Username, body.Text)
+		(&slackError{"Invalid body", msg, nil}).handleError(res)
 		return
 	}
 
@@ -58,14 +66,48 @@ func (sa *SlackApp) slashCommandHandler(res http.ResponseWriter, req *http.Reque
 	handler(res, &body)
 }
 
-func handleCase(res http.ResponseWriter, body *slashCommandRequestBody) {
-	fmt.Println("handling case")
+func (app *SlackApp) handleCase(res http.ResponseWriter, body *slashCommandRequestBody) {
+	// validate case id
+	var id string
+	if id = getCaseId(body.Text); id == "" {
+		msg := fmt.Sprintf("Failed to parse url/id (text: %v)", body.Text)
+		(&slackError{"Invalid case id/url, please try again", msg, nil}).handleError(res)
+		return
+	}
+
+	// get case
+	f1Case, err := app.getCase(id)
+	if err != nil {
+		msg := fmt.Sprintf("Failed retrieve case (id: %v)", id)
+		(&slackError{"Failed to retrieve case", msg, err}).handleError(res)
+		return
+	}
+
+	// send data to slack service to format and post message
+	generateCaseContent(res, &f1Case, body.ChannelID, body.Username, app.OAuthAccessToken)
+
+	// send 204
+	res.WriteHeader(http.StatusNoContent)
 }
 
-func handleUser(res http.ResponseWriter, body *slashCommandRequestBody) {
+func (app *SlackApp) handleUser(res http.ResponseWriter, body *slashCommandRequestBody) {
+	/*
+		TODO
+		- validate case id/url
+		- get case
+		- send 204
+		- send case to slack service
+			- send channel_id
+			- send user_name
+			- send case data
+			- send token
+		- slack service:
+			- formats content
+			- posts it
+	*/
 
 }
 
-func handleCollection(res http.ResponseWriter, body *slashCommandRequestBody) {
+func (app *SlackApp) handleCollection(res http.ResponseWriter, body *slashCommandRequestBody) {
 
 }

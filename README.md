@@ -25,9 +25,29 @@ Create `conf.json` file with structure:
 	- handler, check token
 	- call the correct service with channel id + username
 	- service gets case/user/collection, responds with 204
-	- service calls another services that formats payload and sends off to slack api
+	- Zsservice calls another services that formats payload and sends off to slack api
+- todo
+	- handle errors better, http.Error(...) doesn't provide revelant data to slack
+	- make a wrapper interface? takes:
+		- res
+		- public message
+		- custom msg
+		- err
+		- other content to add
+- todo
+	- finish remaining handlers	
+		- user
+		- collection
+	- change colors to constants
+	- change urls to constants?
+- todo
+	- name bot better
+	- add image + background color
 
-## Adding slash commands
+## Adding app to slack
+Name: *Figure 1 Slack App*
+
+
 ### Required permissions
 In the *Permissions* section, add the following permissions and re-authorize the app:
 - `commands`

@@ -64,13 +64,13 @@ type f1User struct {
 	UploadsCount   int `json:"profileUploadsCount"`
 }
 
-func (o *SlackApp) getCase(id string) (f1Case, error) {
+func (app *SlackApp) getCase(id string) (f1Case, error) {
 	var body f1Case
 
 	url := "https://app.figure1.com/s/case/" + id
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", o.BearerToken)
+	req.Header.Add("Authorization", app.BearerToken)
 
 	// make the request
 	client := &http.Client{}
@@ -82,8 +82,8 @@ func (o *SlackApp) getCase(id string) (f1Case, error) {
 
 	if res.StatusCode == http.StatusUnauthorized {
 		fmt.Println("Need to relog")
-		if err = o.getBearerToken(); err == nil {
-			return o.getCase(id)
+		if err = app.getBearerToken(); err == nil {
+			return app.getCase(id)
 		}
 
 		return body, errors.New("Failed to refresh bearer token")
@@ -102,13 +102,13 @@ func (o *SlackApp) getCase(id string) (f1Case, error) {
 	return body, nil
 }
 
-func (o *SlackApp) getUser(username string) (f1User, error) {
+func (app *SlackApp) getUser(username string) (f1User, error) {
 	var body f1User
 
 	url := "https://app.figure1.com/s/profile/public/" + username
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", o.BearerToken)
+	req.Header.Add("Authorization", app.BearerToken)
 
 	// make the request
 	client := &http.Client{}
@@ -120,8 +120,8 @@ func (o *SlackApp) getUser(username string) (f1User, error) {
 
 	if res.StatusCode == http.StatusUnauthorized {
 		fmt.Println("Need to relog")
-		if err = o.getBearerToken(); err == nil {
-			return o.getUser(username)
+		if err = app.getBearerToken(); err == nil {
+			return app.getUser(username)
 		}
 
 		return body, errors.New("Failed to refresh bearer token")
@@ -143,13 +143,13 @@ func (o *SlackApp) getUser(username string) (f1User, error) {
 	return body, nil
 }
 
-func (o *SlackApp) getBearerToken() error {
+func (app *SlackApp) getBearerToken() error {
 	reqBody := struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}{
-		o.Email,
-		o.Password,
+		app.Email,
+		app.Password,
 	}
 	reqJSON, err := json.Marshal(reqBody)
 	if err != nil {
@@ -184,6 +184,6 @@ func (o *SlackApp) getBearerToken() error {
 		return errors.New("Failed to decode bearer response body")
 	}
 
-	o.BearerToken = resBody.Token
+	app.BearerToken = resBody.Token
 	return nil
 }

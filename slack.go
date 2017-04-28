@@ -2,11 +2,16 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 )
 
+const slackPostMsgLink = "https://slack.com/api/chat.postMessage"
+
+// TODO - deprecate this
 type SlackResponse struct {
 	ResponseType string        `json:"response_type"`
 	Text         string        `json:"text,omitempty"`
@@ -34,6 +39,112 @@ type Field struct {
 	Short bool   `json:"short,omitempty"`
 }
 
+func postSlackMessage(res http.ResponseWriter, channelID, username, token string, attachments []*Attachment) {
+	client := &http.Client{}
+
+	attachmentBytes, err := json.Marshal(attachments)
+	if (err) != nil {
+		msg := "Failed to marshal slack data to JSON"
+		(&slackError{msg, msg, err}).handleError(res)
+		return
+	}
+	attachmentString := string(attachmentBytes)
+
+	fmt.Println("string would be", attachmentString)
+
+	// create form
+	vals := url.Values{}
+	vals.Add("token", token)
+	vals.Add("channel", channelID)
+	vals.Add("username", username)
+	vals.Add("as_user", "true")
+	vals.Add("attachments", attachmentString)
+
+	// post as `x-www-form-urlencoded`
+	resp, err := client.PostForm(slackPostMsgLink, vals)
+	defer resp.Body.Close()
+	if err != nil {
+		msg := "Failed to connect to slack api"
+		(&slackError{msg, msg, err}).handleError(res)
+		return
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		msg := fmt.Sprintf("Posting to slack was not entirely successful (status: %v)", resp.Status)
+		(&slackError{"Posting to slack was not entirely successful", msg, nil}).handleError(res)
+		fmt.Println("body: ", resp.Body)
+	}
+}
+
+func generateCaseContent(res http.ResponseWriter, data *f1Case, channelID, username, token string) {
+	attachments := []*Attachment{}
+
+	// author
+	authorSection := Attachment{
+		Title:     data.Author.Username,
+		TitleLink: caseLinkGen("user", data.Author.Username),
+	}
+	if data.Author.TopContributor {
+		authorSection.Footer = "Top Contributor"
+		authorSection.FooterIcon = "http://i.imgur.com/oYpmgwF.jpg"
+	} else if data.Author.Verified {
+		authorSection.Footer = "Verified"
+		authorSection.FooterIcon = "http://i.imgur.com/9eyI61P.jpg"
+	}
+	attachments = append(attachments, &authorSection)
+
+	// case info
+	caseInfoSection := Attachment{
+		ThumbUrl: caseLinkGen("image", data.Id),
+	}
+	split := strings.Split(data.Caption, " ")
+	const limit int = 36
+	var caption string
+	if len(split) > limit {
+		caption = strings.Join(split[0:limit], " ") + "..."
+	} else {
+		caption = data.Caption
+	}
+	authorSection.Fallback = "FIGURE 1 CASE: " + caption
+	caseInfoSection.Text = caption
+	caseInfoSection.Footer = strings.Join([]string{
+		data.ImageViews,
+		strconv.Itoa(data.VoteCount) + " stars",
+		strconv.Itoa(data.CommentCount) + " comments",
+		strconv.Itoa(data.Followers) + " followers",
+	}, ", ")
+	attachments = append(attachments, &caseInfoSection)
+
+	// share links
+	shareSection := Attachment{
+		Title: "Share case link",
+		Text:  caseLinkGen("case", data.Id),
+		// TODO - change color to constant
+		Color: "#8bcaf1",
+	}
+	attachments = append(attachments, &shareSection)
+
+	// send off to slack
+	postSlackMessage(res, channelID, username, token, attachments)
+}
+
+/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ */
 func slackCaseResponse(res http.ResponseWriter, data *f1Case) {
 	resp := &SlackResponse{
 		ResponseType: "in_channel",
@@ -79,6 +190,7 @@ func slackCaseResponse(res http.ResponseWriter, data *f1Case) {
 	shareSection := Attachment{
 		Title: "Share case link",
 		Text:  caseLinkGen("case", data.Id),
+		// TODO - change color to constant
 		Color: "#8bcaf1",
 	}
 	resp.Attachments = append(resp.Attachments, &shareSection)
