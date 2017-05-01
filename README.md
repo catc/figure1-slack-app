@@ -15,17 +15,9 @@ Create `conf.json` file with structure:
 ```
 
 ## TODO
-- migrate to new slack app api
 - add tests
 - change name of app + repo
 - update readme.md to contain info how to set up correct slack permissions and steps
-- add error handler
-	- ephemeral message that displays error
-- flow
-	- handler, check token
-	- call the correct service with channel id + username
-	- service gets case/user/collection, responds with 204
-	- Zsservice calls another services that formats payload and sends off to slack api
 - todo
 	- handle errors better, http.Error(...) doesn't provide revelant data to slack
 	- make a wrapper interface? takes:
@@ -36,50 +28,56 @@ Create `conf.json` file with structure:
 		- other content to add
 - todo
 	- finish remaining handlers	
-		- user
 		- collection
 	- change colors to constants
 	- change urls to constants?
-- todo
-	- name bot better
-	- add image + background color
+
 
 ## Adding app to slack
-Name: *Figure 1 Slack App*
+Name: **Figure 1 Slack App**
 
 
 ### Required permissions
-In the *Permissions* section, add the following permissions and re-authorize the app:
+In the **Permissions** section, add the following permissions and re-authorize the app:
 - `commands`
 - `chat:write:bot`
 - `chat:write:user`
 
 ### Required tokens/secrets
 Add the following tokens to `conf.json`
-- in *Permissions* -> *OAuth & Permissions*, grab the `OAuth Access Token`
-- in *App Credentials*, grab `Verification Token`
+- in **Permissions** -> **OAuth & Permissions**, grab the `OAuth Access Token`
+- in **App Credentials**, grab `Verification Token`
 
 
 ### Supported commands
 In the slash command sections, add the following commands:
 
 #### case
-*command:* `/case`
-*url:* `https://catc-services.com/fig1-slack/case`
-*description:* Display Figure 1 case info
-*usage hint:* [case url or case id]
+**command:** `/case`
+
+**url:** `https://catc-services.com/fig1-slack/case`
+
+**description:** Display Figure 1 case info
+
+**usage hint:** [case url or case id]
 
 #### user
-*command:* `/user`
-*url:* `https://catc-services.com/fig1-slack/user`
-*description:* Get Figure 1 user
-*usage hint:* [username or profile url]
+**command:** `/user`
+
+**url:** `https://catc-services.com/fig1-slack/user`
+
+**description:** Get Figure 1 user
+
+**usage hint:** [username or profile url]
 
 #### collection
-*command:* `/collection`
-*url:* `https://catc-services.com/fig1-slack/collection`
-*description:* Display collection preview
-*usage hint:* [collection id or collection url]
+**command:** `/collection`
+
+**url:** `https://catc-services.com/fig1-slack/collection`
+
+**description:** Display collection preview
+
+**usage hint:** [collection id or collection url]
 
 ### nginx config
 All requests to `https://catc-services.com/fig1-slack/*` redirects to `localhost:3400/*`

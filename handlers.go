@@ -69,7 +69,7 @@ func (app *SlackApp) slashCommandHandler(res http.ResponseWriter, req *http.Requ
 func (app *SlackApp) handleCase(res http.ResponseWriter, body *slashCommandRequestBody) {
 	// validate case id
 	var id string
-	if id = getCaseId(body.Text); id == "" {
+	if id = getCaseID(body.Text); id == "" {
 		msg := fmt.Sprintf("Failed to parse url/id (text: %v)", body.Text)
 		(&slackError{"Invalid case id/url, please try again", msg, nil}).handleError(res)
 		return
@@ -91,6 +91,30 @@ func (app *SlackApp) handleCase(res http.ResponseWriter, body *slashCommandReque
 }
 
 func (app *SlackApp) handleUser(res http.ResponseWriter, body *slashCommandRequestBody) {
+	// get username
+	var username string
+	if username = getUsername(body.Text); username == "" {
+		msg := fmt.Sprintf("Failed to parse username (text: %v)", body.Text)
+		(&slackError{"Invalid user id/url, please try again", msg, nil}).handleError(res)
+		return
+	}
+
+	// get user data
+	f1User, err := app.getUser(username)
+	if err != nil {
+		msg := fmt.Sprintf("Failed retrieve user data (username: %v)", username)
+		(&slackError{"Failed to retrieve user", msg, err}).handleError(res)
+		return
+	}
+
+	// send data to slack service to format and post message
+	generateUserContent(res, &f1User, body.ChannelID, body.Username, app.OAuthAccessToken)
+
+	// send 204
+	res.WriteHeader(http.StatusNoContent)
+}
+
+func (app *SlackApp) handleCollection(res http.ResponseWriter, body *slashCommandRequestBody) {
 	/*
 		TODO
 		- validate case id/url
@@ -105,9 +129,4 @@ func (app *SlackApp) handleUser(res http.ResponseWriter, body *slashCommandReque
 			- formats content
 			- posts it
 	*/
-
-}
-
-func (app *SlackApp) handleCollection(res http.ResponseWriter, body *slashCommandRequestBody) {
-
 }

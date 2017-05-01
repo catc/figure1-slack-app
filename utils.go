@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func getCaseId(text string) (id string) {
+func getCaseID(text string) (id string) {
 	if len(text) == 24 {
 		id = text
 	} else {
@@ -39,8 +39,30 @@ func getCaseId(text string) (id string) {
 			}
 		}
 	}
-
 	return id
+}
+
+func getUsername(text string) string {
+	// try parsing as url
+	u, err := url.Parse(text)
+	if err != nil {
+		return ""
+	}
+
+	if u.Host != "" {
+		query := u.Query()
+
+		uq := query.Get("username")
+		if uq != "" {
+			// eg: 	https://app.figure1.com/rd/publicprofile?username=penguinophile
+			return uq
+		}
+		// eg: 	https://app.figure1.com/user/penguinophile
+		path := strings.Split(u.EscapedPath(), "/")
+		return path[len(path)-1]
+	}
+	// is regular user
+	return text
 }
 
 type slackError struct {

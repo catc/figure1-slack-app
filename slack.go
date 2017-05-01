@@ -128,97 +128,8 @@ func generateCaseContent(res http.ResponseWriter, data *f1Case, channelID, usern
 	postSlackMessage(res, channelID, username, token, attachments)
 }
 
-/*
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- */
-func slackCaseResponse(res http.ResponseWriter, data *f1Case) {
-	resp := &SlackResponse{
-		ResponseType: "in_channel",
-	}
-
-	// author
-	authorSection := Attachment{
-		Title:     data.Author.Username,
-		TitleLink: caseLinkGen("user", data.Author.Username),
-	}
-	if data.Author.TopContributor {
-		authorSection.Footer = "Top Contributor"
-		authorSection.FooterIcon = "http://i.imgur.com/oYpmgwF.jpg"
-	} else if data.Author.Verified {
-		authorSection.Footer = "Verified"
-		authorSection.FooterIcon = "http://i.imgur.com/9eyI61P.jpg"
-	}
-	resp.Attachments = append(resp.Attachments, &authorSection)
-
-	// case info
-	caseInfoSection := Attachment{
-		ThumbUrl: caseLinkGen("image", data.Id),
-	}
-	split := strings.Split(data.Caption, " ")
-	const limit int = 36
-	var caption string
-	if len(split) > limit {
-		caption = strings.Join(split[0:limit], " ") + "..."
-	} else {
-		caption = data.Caption
-	}
-	authorSection.Fallback = "FIGURE 1 CASE: " + caption
-	caseInfoSection.Text = caption
-	caseInfoSection.Footer = strings.Join([]string{
-		data.ImageViews,
-		strconv.Itoa(data.VoteCount) + " stars",
-		strconv.Itoa(data.CommentCount) + " comments",
-		strconv.Itoa(data.Followers) + " followers",
-	}, ", ")
-	resp.Attachments = append(resp.Attachments, &caseInfoSection)
-
-	// share links
-	shareSection := Attachment{
-		Title: "Share case link",
-		Text:  caseLinkGen("case", data.Id),
-		// TODO - change color to constant
-		Color: "#8bcaf1",
-	}
-	resp.Attachments = append(resp.Attachments, &shareSection)
-
-	res.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(res).Encode(resp)
-}
-
-func caseLinkGen(linkType, val string) string {
-	switch linkType {
-	case "user":
-		return "https://app.figure1.com/rd/publicprofile?username=" + val
-	case "case":
-		return "https://app.figure1.com/rd/image?imageid=" + val
-	case "image":
-		return "https://s3.amazonaws.com/static.figure1.com/img/share/" + val
-	}
-	return ""
-}
-
-func userLinkGen(username string) string {
-	return "https://app.figure1.com/rd/publicprofile?username=" + username
-}
-
-func slackUserResponse(res http.ResponseWriter, data *f1User) {
-	resp := &SlackResponse{
-		ResponseType: "in_channel",
-	}
+func generateUserContent(res http.ResponseWriter, data *f1User, channelID, username, token string) {
+	attachments := []*Attachment{}
 
 	// main section
 	mainSection := Attachment{
@@ -233,7 +144,7 @@ func slackUserResponse(res http.ResponseWriter, data *f1User) {
 		mainSection.Footer = "Verified"
 		mainSection.FooterIcon = "http://i.imgur.com/9eyI61P.jpg"
 	}
-	resp.Attachments = append(resp.Attachments, &mainSection)
+	attachments = append(attachments, &mainSection)
 
 	// extra content section
 	extraContentSection := Attachment{
@@ -285,8 +196,7 @@ func slackUserResponse(res http.ResponseWriter, data *f1User) {
 		}
 	}
 	extraContentSection.Footer = strings.Join(stats, ", ")
-
-	resp.Attachments = append(resp.Attachments, &extraContentSection)
+	attachments = append(attachments, &extraContentSection)
 
 	// share links
 	shareSection := Attachment{
@@ -294,8 +204,24 @@ func slackUserResponse(res http.ResponseWriter, data *f1User) {
 		Text:  userLinkGen(data.Username),
 		Color: "#8bcaf1",
 	}
-	resp.Attachments = append(resp.Attachments, &shareSection)
+	attachments = append(attachments, &shareSection)
 
-	res.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(res).Encode(resp)
+	// send off to slack
+	postSlackMessage(res, channelID, username, token, attachments)
+}
+
+func caseLinkGen(linkType, val string) string {
+	switch linkType {
+	case "user":
+		return "https://app.figure1.com/rd/publicprofile?username=" + val
+	case "case":
+		return "https://app.figure1.com/rd/image?imageid=" + val
+	case "image":
+		return "https://s3.amazonaws.com/static.figure1.com/img/share/" + val
+	}
+	return ""
+}
+
+func userLinkGen(username string) string {
+	return "https://app.figure1.com/rd/publicprofile?username=" + username
 }
