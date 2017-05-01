@@ -70,7 +70,7 @@ func (app *SlackApp) handleCase(res http.ResponseWriter, body *slashCommandReque
 	// validate case id
 	var id string
 	if id = getCaseID(body.Text); id == "" {
-		msg := fmt.Sprintf("Failed to parse url/id (text: %v)", body.Text)
+		msg := fmt.Sprintf("Failed to parse case url/id (text: %v)", body.Text)
 		(&slackError{"Invalid case id/url, please try again", msg, nil}).handleError(res)
 		return
 	}
@@ -115,18 +115,25 @@ func (app *SlackApp) handleUser(res http.ResponseWriter, body *slashCommandReque
 }
 
 func (app *SlackApp) handleCollection(res http.ResponseWriter, body *slashCommandRequestBody) {
-	/*
-		TODO
-		- validate case id/url
-		- get case
-		- send 204
-		- send case to slack service
-			- send channel_id
-			- send user_name
-			- send case data
-			- send token
-		- slack service:
-			- formats content
-			- posts it
-	*/
+	// get id
+	var id string
+	if id = getCollectionID(body.Text); id == "" {
+		msg := fmt.Sprintf("Failed to parse collection url/id (text: %v)", body.Text)
+		(&slackError{"Invalid collection id/url, please try again", msg, nil}).handleError(res)
+		return
+	}
+
+	// get user data
+	f1Collection, err := app.getCollection(id)
+	if err != nil {
+		msg := fmt.Sprintf("Failed retrieve collection (id: %v)", id)
+		(&slackError{"Failed to retrieve collection", msg, err}).handleError(res)
+		return
+	}
+
+	// send data to slack service to format and post message
+	generateCollectionContent(res, &f1Collection, body.ChannelID, body.Username, app.OAuthAccessToken)
+
+	// send 204
+	res.WriteHeader(http.StatusNoContent)
 }

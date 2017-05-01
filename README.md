@@ -15,23 +15,12 @@ Create `conf.json` file with structure:
 ```
 
 ## TODO
+- add text case image placeholder
+- change urls to constants?
+- make figure1 get user/case/collection less repetitive
+	- pass in interface to decode to
+- update `getCollectionID`
 - add tests
-- change name of app + repo
-- update readme.md to contain info how to set up correct slack permissions and steps
-- todo
-	- handle errors better, http.Error(...) doesn't provide revelant data to slack
-	- make a wrapper interface? takes:
-		- res
-		- public message
-		- custom msg
-		- err
-		- other content to add
-- todo
-	- finish remaining handlers	
-		- collection
-	- change colors to constants
-	- change urls to constants?
-
 
 ## Adding app to slack
 Name: **Figure 1 Slack App**
@@ -75,7 +64,7 @@ In the slash command sections, add the following commands:
 
 **url:** `https://catc-services.com/fig1-slack/collection`
 
-**description:** Display collection preview
+**description:** Display a collection preview
 
 **usage hint:** [collection id or collection url]
 

@@ -9,15 +9,11 @@ import (
 	"strings"
 )
 
+const lightBlue = "#8bcaf1"
+const red = "#fd7f8a"
 const slackPostMsgLink = "https://slack.com/api/chat.postMessage"
 
-// TODO - deprecate this
-type SlackResponse struct {
-	ResponseType string        `json:"response_type"`
-	Text         string        `json:"text,omitempty"`
-	Attachments  []*Attachment `json:"attachments"`
-}
-
+// Attachment is individual item when posting a message to slack
 type Attachment struct {
 	AuthorName string   `json:"author_name,omitempty"`
 	Title      string   `json:"title,omitempty"`
@@ -25,7 +21,7 @@ type Attachment struct {
 	TitleLink  string   `json:"title_link,omitempty"`
 	Text       string   `json:"text,omitempty"` // can contain markup
 	PreText    string   `json:"pretext,omitempty"`
-	ThumbUrl   string   `json:"thumb_url,omitempty"`
+	ThumbURL   string   `json:"thumb_url,omitempty"`
 	Footer     string   `json:"footer,omitempty"`
 	FooterIcon string   `json:"footer_icon,omitempty"`
 	Color      string   `json:"color,omitempty"`
@@ -33,6 +29,7 @@ type Attachment struct {
 	Fields     []*Field `json:"fields,omitempty"`
 }
 
+// Field contains segments of data, part of an attachment
 type Field struct {
 	Title string `json:"title,omitempty"`
 	Value string `json:"value,omitempty"` // can contain markup
@@ -50,8 +47,6 @@ func postSlackMessage(res http.ResponseWriter, channelID, username, token string
 	}
 	attachmentString := string(attachmentBytes)
 
-	fmt.Println("string would be", attachmentString)
-
 	// create form
 	vals := url.Values{}
 	vals.Add("token", token)
@@ -62,12 +57,12 @@ func postSlackMessage(res http.ResponseWriter, channelID, username, token string
 
 	// post as `x-www-form-urlencoded`
 	resp, err := client.PostForm(slackPostMsgLink, vals)
-	defer resp.Body.Close()
 	if err != nil {
 		msg := "Failed to connect to slack api"
 		(&slackError{msg, msg, err}).handleError(res)
 		return
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		msg := fmt.Sprintf("Posting to slack was not entirely successful (status: %v)", resp.Status)
@@ -95,16 +90,9 @@ func generateCaseContent(res http.ResponseWriter, data *f1Case, channelID, usern
 
 	// case info
 	caseInfoSection := Attachment{
-		ThumbUrl: caseLinkGen("image", data.Id),
+		ThumbURL: caseLinkGen("image", data.ID),
 	}
-	split := strings.Split(data.Caption, " ")
-	const limit int = 36
-	var caption string
-	if len(split) > limit {
-		caption = strings.Join(split[0:limit], " ") + "..."
-	} else {
-		caption = data.Caption
-	}
+	caption := truncateString(data.Caption)
 	authorSection.Fallback = "FIGURE 1 CASE: " + caption
 	caseInfoSection.Text = caption
 	caseInfoSection.Footer = strings.Join([]string{
@@ -118,9 +106,8 @@ func generateCaseContent(res http.ResponseWriter, data *f1Case, channelID, usern
 	// share links
 	shareSection := Attachment{
 		Title: "Share case link",
-		Text:  caseLinkGen("case", data.Id),
-		// TODO - change color to constant
-		Color: "#8bcaf1",
+		Text:  caseLinkGen("case", data.ID),
+		Color: lightBlue,
 	}
 	attachments = append(attachments, &shareSection)
 
@@ -202,7 +189,70 @@ func generateUserContent(res http.ResponseWriter, data *f1User, channelID, usern
 	shareSection := Attachment{
 		Title: "Share profile link",
 		Text:  userLinkGen(data.Username),
-		Color: "#8bcaf1",
+		Color: lightBlue,
+	}
+	attachments = append(attachments, &shareSection)
+
+	// send off to slack
+	postSlackMessage(res, channelID, username, token, attachments)
+}
+
+func generateCollectionContent(res http.ResponseWriter, data *f1Collection, channelID, username, token string) {
+	attachments := []*Attachment{}
+
+	// author
+	author := data.Embedded.Authors[0]
+	authorSection := Attachment{
+		Title:     author.Username,
+		TitleLink: caseLinkGen("user", author.Username),
+		Fallback:  "FIGURE 1 COLLECTION: " + data.Title,
+	}
+	if author.TopContributor {
+		authorSection.Footer = "Top Contributor"
+		authorSection.FooterIcon = "http://i.imgur.com/oYpmgwF.jpg"
+	} else if author.Verified {
+		authorSection.Footer = "Verified"
+		authorSection.FooterIcon = "http://i.imgur.com/9eyI61P.jpg"
+	}
+	attachments = append(attachments, &authorSection)
+
+	// collection info
+	mainSection := Attachment{
+		Title: data.Title,
+	}
+	if data.Size == 1 {
+		mainSection.Footer = "1 case"
+	} else {
+		mainSection.Footer = fmt.Sprintf("%v cases", data.Size)
+	}
+	mainSection.Text = truncateString(data.Description)
+	attachments = append(attachments, &mainSection)
+
+	// items
+	items := data.Embedded.Items
+	length := 3
+	if len(items) < length {
+		length = len(items)
+	}
+	for _, item := range items[0:length] {
+		attachment := Attachment{
+			Color:    red,
+			Text:     truncateString(item.Caption),
+			ThumbURL: genCollectionItemImageLink(item.Links.Image.Href, item.ID),
+		}
+		attachment.Footer = strings.Join([]string{
+			strconv.Itoa(item.VoteCount) + " stars",
+			strconv.Itoa(item.CommentCount) + " comments",
+			strconv.Itoa(item.Followers) + " followers",
+		}, ", ")
+		attachments = append(attachments, &attachment)
+	}
+
+	// share links
+	shareSection := Attachment{
+		Title: "Share collection link",
+		Text:  collectionLinkGen(data.ID),
+		Color: lightBlue,
 	}
 	attachments = append(attachments, &shareSection)
 
@@ -224,4 +274,15 @@ func caseLinkGen(linkType, val string) string {
 
 func userLinkGen(username string) string {
 	return "https://app.figure1.com/rd/publicprofile?username=" + username
+}
+
+func collectionLinkGen(id string) string {
+	return "https://app.figure1.com/rd/collections?id=" + id
+}
+
+func genCollectionItemImageLink(link, collectionID string) string {
+	if link == "" {
+		return "http://i.imgur.com/9Tpmuwk.png"
+	}
+	return caseLinkGen("image", collectionID)
 }

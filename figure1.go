@@ -10,7 +10,7 @@ import (
 )
 
 type f1Case struct {
-	Id           string `json:"_id"`
+	ID           string `json:"_id"`
 	Caption      string `json:"caption"`
 	IsPagingCase bool   `json:"isPagingCase"`
 
@@ -29,7 +29,7 @@ type f1Case struct {
 }
 
 type f1User struct {
-	Id             string `json:"_id"`
+	ID             string `json:"_id"`
 	Username       string `json:"username"`
 	Verified       bool   `json:"verified"`
 	TopContributor bool   `json:"topContributor"`
@@ -62,6 +62,38 @@ type f1User struct {
 	FollowersCount int `json:"profileFollowersCount"`
 	FollowingCount int `json:"profileFollowingCount"`
 	UploadsCount   int `json:"profileUploadsCount"`
+}
+
+type f1Collection struct {
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	ID          string `json:"id"`
+	Size        int    `json:"size"`
+	Embedded    struct {
+		Items []struct {
+			ID           string `json:"_id"`
+			Caption      string `json:"caption"`
+			Title        string `json:"title"`
+			ContentType  int    `json:"contentType"`
+			CommentCount int    `json:"commentCount"`
+			Followers    int    `json:"followers"`
+			VoteCount    int    `json:"voteCount"`
+			Links        struct {
+				Image struct {
+					Href string `json:"href"`
+				} `json:"image"`
+			} `json:"_links"`
+		} `json:"items"`
+
+		Authors []struct {
+			Username          string `json:"username"`
+			ID                string `json:"_id"`
+			Verified          bool   `json:"verified"`
+			SpecialtyName     string `json:"specialtyName"`
+			SpecialtyCategory string `json:"specialtyCategory"`
+			TopContributor    bool   `json:"topContributor"`
+		} `json:"authors"`
+	} `json:"_embedded"`
 }
 
 func (app *SlackApp) getCase(id string) (f1Case, error) {
@@ -143,6 +175,44 @@ func (app *SlackApp) getUser(username string) (f1User, error) {
 	return body, nil
 }
 
+func (app *SlackApp) getCollection(id string) (f1Collection, error) {
+	var body f1Collection
+
+	url := "https://api.figure1.com/collections/" + id
+	req, err := http.NewRequest("GET", url, nil)
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Authorization", app.BearerToken)
+
+	// make the request
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		return body, errors.New("Failed to create collection http request")
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode == http.StatusUnauthorized {
+		fmt.Println("Need to relog")
+		if err = app.getBearerToken(); err == nil {
+			return app.getCollection(id)
+		}
+
+		return body, errors.New("Failed to refresh bearer token")
+	}
+
+	if res.StatusCode != http.StatusOK {
+		fmt.Println("Failed to retrieve collection", res.Status)
+		return body, errors.New("Failed to retrieve collection, please try again later")
+	}
+
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		fmt.Println("Failed to decode json, ", err)
+		return body, err
+	}
+
+	return body, nil
+}
+
 func (app *SlackApp) getBearerToken() error {
 	reqBody := struct {
 		Email    string `json:"email"`
@@ -163,12 +233,11 @@ func (app *SlackApp) getBearerToken() error {
 	// make the request
 	client := &http.Client{}
 	res, err := client.Do(req)
-	defer res.Body.Close()
-
 	if err != nil {
 		fmt.Println("Failed to connect to Figure 1 API, ", err)
-		return errors.New("Failed to connect to Figure 1 API. Try again later.")
+		return errors.New("Failed to connect to Figure 1 API, try again later")
 	}
+	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
 		log.Fatal("Failed to retrieve bearer token: Incorrect credentials")

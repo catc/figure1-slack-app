@@ -1,5 +1,6 @@
 conf.json
 *.go.swp
+.DS_Store
 
 figure1-slack-app
 z_*

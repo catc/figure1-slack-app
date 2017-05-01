@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	PORT    = "3400"
-	ADDRESS = ":" + PORT
+	port    = "3400"
+	address = ":" + port
 )
 
 // SlackApp contains figure1 and slack tokens/secrets
@@ -39,14 +39,14 @@ func main() {
 	mux.HandleFunc("/collection", slackApp.slashCommandHandler)
 
 	server := &http.Server{
-		Addr:           ADDRESS,
+		Addr:           address,
 		Handler:        mux,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	fmt.Println("Figure 1 slack app listening on " + ADDRESS)
+	fmt.Println("Figure 1 slack app listening on " + address)
 
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatal(err)
