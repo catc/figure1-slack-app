@@ -66,7 +66,6 @@ func getUsername(text string) string {
 }
 
 func getCollectionID(text string) (id string) {
-	// TODO - finish this + add tests
 	if len(text) == 24 {
 		id = text
 	} else {
@@ -79,18 +78,13 @@ func getCollectionID(text string) (id string) {
 
 		// parse url, 2 types of links (page url and share link)
 		query := u.Query()
-		imageid := query.Get("imageid")
-		image := query.Get("image")
+		collectionid := query.Get("id")
 
-		switch {
-		case len(imageid) == 24:
-			// is modal link
-			id = imageid
-		case len(image) == 24:
-			// is web app url
-			id = image
-		default:
+		if len(collectionid) == 24 {
 			// is share link
+			id = collectionid
+		} else {
+			// is web app route
 			path := strings.Split(u.EscapedPath(), "/")
 			idAttempt := path[len(path)-1]
 			if len(idAttempt) == 24 {

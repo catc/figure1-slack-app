@@ -1,6 +1,6 @@
 #!/bin/sh
 
-OUTPUT="fig1-slack-app"
+OUTPUT="figure1-slack-app"
 
 if [ -e "./$OUTPUT" ];
 then
