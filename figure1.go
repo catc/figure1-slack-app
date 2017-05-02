@@ -10,10 +10,6 @@ import (
 	"net/http"
 )
 
-/*type Ja struct {
-	ID string `json:"_id"`
-}*/
-
 type f1Case struct {
 	ID           string `json:"_id"`
 	Caption      string `json:"caption"`
@@ -178,6 +174,9 @@ func (app *SlackApp) getUser(username string) (f1User, error) {
 	if err != nil {
 		return body, err
 	}
+
+	body.Category = body.SpecialtyObject.Category.Strings.Label
+	body.Specialty = body.SpecialtyObject.Strings.Label
 
 	return body, nil
 }

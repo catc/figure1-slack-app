@@ -9,9 +9,16 @@ import (
 	"strings"
 )
 
-const lightBlue = "#8bcaf1"
-const red = "#fd7f8a"
 const slackPostMsgLink = "https://slack.com/api/chat.postMessage"
+const (
+	verifiedBadgeLink       = "http://i.imgur.com/9eyI61P.jpg"
+	topContributorBadgeLink = "http://i.imgur.com/oYpmgwF.jpg"
+	textCasePlaceholder     = "http://i.imgur.com/9Tpmuwk.png"
+)
+const (
+	colorLightBlue = "#8bcaf1"
+	colorRed       = "#fd7f8a"
+)
 
 // Attachment is individual item when posting a message to slack
 type Attachment struct {
@@ -77,14 +84,14 @@ func generateCaseContent(res http.ResponseWriter, data *f1Case, channelID, usern
 	// author
 	authorSection := Attachment{
 		Title:     data.Author.Username,
-		TitleLink: caseLinkGen("user", data.Author.Username),
+		TitleLink: userLinkGen(data.Author.Username),
 	}
 	if data.Author.TopContributor {
 		authorSection.Footer = "Top Contributor"
-		authorSection.FooterIcon = "http://i.imgur.com/oYpmgwF.jpg"
+		authorSection.FooterIcon = topContributorBadgeLink
 	} else if data.Author.Verified {
 		authorSection.Footer = "Verified"
-		authorSection.FooterIcon = "http://i.imgur.com/9eyI61P.jpg"
+		authorSection.FooterIcon = verifiedBadgeLink
 	}
 	attachments = append(attachments, &authorSection)
 
@@ -107,7 +114,7 @@ func generateCaseContent(res http.ResponseWriter, data *f1Case, channelID, usern
 	shareSection := Attachment{
 		Title: "Share case link",
 		Text:  caseLinkGen("case", data.ID),
-		Color: lightBlue,
+		Color: colorLightBlue,
 	}
 	attachments = append(attachments, &shareSection)
 
@@ -126,10 +133,10 @@ func generateUserContent(res http.ResponseWriter, data *f1User, channelID, usern
 	}
 	if data.TopContributor {
 		mainSection.Footer = "Top Contributor"
-		mainSection.FooterIcon = "http://i.imgur.com/oYpmgwF.jpg"
+		mainSection.FooterIcon = topContributorBadgeLink
 	} else if data.Verified {
 		mainSection.Footer = "Verified"
-		mainSection.FooterIcon = "http://i.imgur.com/9eyI61P.jpg"
+		mainSection.FooterIcon = verifiedBadgeLink
 	}
 	attachments = append(attachments, &mainSection)
 
@@ -189,7 +196,7 @@ func generateUserContent(res http.ResponseWriter, data *f1User, channelID, usern
 	shareSection := Attachment{
 		Title: "Share profile link",
 		Text:  userLinkGen(data.Username),
-		Color: lightBlue,
+		Color: colorLightBlue,
 	}
 	attachments = append(attachments, &shareSection)
 
@@ -204,15 +211,16 @@ func generateCollectionContent(res http.ResponseWriter, data *f1Collection, chan
 	author := data.Embedded.Authors[0]
 	authorSection := Attachment{
 		Title:     author.Username,
-		TitleLink: caseLinkGen("user", author.Username),
+		Text:      author.SpecialtyCategory + ", " + author.SpecialtyName,
+		TitleLink: userLinkGen(author.Username),
 		Fallback:  "FIGURE 1 COLLECTION: " + data.Title,
 	}
 	if author.TopContributor {
 		authorSection.Footer = "Top Contributor"
-		authorSection.FooterIcon = "http://i.imgur.com/oYpmgwF.jpg"
+		authorSection.FooterIcon = topContributorBadgeLink
 	} else if author.Verified {
 		authorSection.Footer = "Verified"
-		authorSection.FooterIcon = "http://i.imgur.com/9eyI61P.jpg"
+		authorSection.FooterIcon = verifiedBadgeLink
 	}
 	attachments = append(attachments, &authorSection)
 
@@ -236,7 +244,7 @@ func generateCollectionContent(res http.ResponseWriter, data *f1Collection, chan
 	}
 	for _, item := range items[0:length] {
 		attachment := Attachment{
-			Color:    red,
+			Color:    colorRed,
 			Text:     truncateString(item.Caption),
 			ThumbURL: genCollectionItemImageLink(item.Links.Image.Href, item.ID),
 		}
@@ -252,7 +260,7 @@ func generateCollectionContent(res http.ResponseWriter, data *f1Collection, chan
 	shareSection := Attachment{
 		Title: "Share collection link",
 		Text:  collectionLinkGen(data.ID),
-		Color: lightBlue,
+		Color: colorLightBlue,
 	}
 	attachments = append(attachments, &shareSection)
 
@@ -262,8 +270,6 @@ func generateCollectionContent(res http.ResponseWriter, data *f1Collection, chan
 
 func caseLinkGen(linkType, val string) string {
 	switch linkType {
-	case "user":
-		return "https://app.figure1.com/rd/publicprofile?username=" + val
 	case "case":
 		return "https://app.figure1.com/rd/image?imageid=" + val
 	case "image":
@@ -282,7 +288,7 @@ func collectionLinkGen(id string) string {
 
 func genCollectionItemImageLink(link, collectionID string) string {
 	if link == "" {
-		return "http://i.imgur.com/9Tpmuwk.png"
+		return textCasePlaceholder
 	}
 	return caseLinkGen("image", collectionID)
 }
