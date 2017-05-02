@@ -17,6 +17,9 @@ Create `conf.json` file with structure:
 ## TODO
 - add text case image placeholder
 - change urls to constants?
+	- for imgur
+	- for f1 + slack
+
 - make figure1 get user/case/collection less repetitive
 	- pass in interface to decode to
 - update `getCollectionID`

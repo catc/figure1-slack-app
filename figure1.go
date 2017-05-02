@@ -5,9 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 )
+
+/*type Ja struct {
+	ID string `json:"_id"`
+}*/
 
 type f1Case struct {
 	ID           string `json:"_id"`
@@ -96,10 +101,30 @@ type f1Collection struct {
 	} `json:"_embedded"`
 }
 
-func (app *SlackApp) getCase(id string) (f1Case, error) {
-	var body f1Case
+type f1Response interface {
+	decode(io.Reader) error
+}
 
-	url := "https://app.figure1.com/s/case/" + id
+func (f *f1Case) decode(body io.Reader) error {
+	if err := json.NewDecoder(body).Decode(&f); err != nil {
+		return err
+	}
+	return nil
+}
+func (f *f1User) decode(body io.Reader) error {
+	if err := json.NewDecoder(body).Decode(&f); err != nil {
+		return err
+	}
+	return nil
+}
+func (f *f1Collection) decode(body io.Reader) error {
+	if err := json.NewDecoder(body).Decode(&f); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (app *SlackApp) fig1Request(url string, marsh f1Response) error {
 	req, err := http.NewRequest("GET", url, nil)
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("Authorization", app.BearerToken)
@@ -108,26 +133,37 @@ func (app *SlackApp) getCase(id string) (f1Case, error) {
 	client := &http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
-		return body, errors.New("Failed to create case http request")
+		return errors.New("Failed to create http request")
 	}
 	defer res.Body.Close()
 
+	// check if request is authorized
 	if res.StatusCode == http.StatusUnauthorized {
 		fmt.Println("Need to relog")
-		if err = app.getBearerToken(); err == nil {
-			return app.getCase(id)
+		if err = app.getBearerToken(); err != nil {
+			return errors.New("Failed to refresh auth token, please try again.")
 		}
-
-		return body, errors.New("Failed to refresh bearer token")
+		return app.fig1Request(url, marsh)
 	}
 
 	if res.StatusCode != http.StatusOK {
-		fmt.Println("Failed to retrieve case")
-		return body, errors.New("Failed to retrieve case, please try again later")
+		fmt.Println("Failed to retrieve case", res.Status)
+		return errors.New("Failed to retrieve case, please try again later")
 	}
 
-	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
-		fmt.Println("Failed to decode json, ", err)
+	if err := marsh.decode(res.Body); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (app *SlackApp) getCase(id string) (f1Case, error) {
+	var body f1Case
+	url := "https://app.figure1.com/s/case/" + id
+
+	err := app.fig1Request(url, &body)
+	if err != nil {
 		return body, err
 	}
 
@@ -136,77 +172,22 @@ func (app *SlackApp) getCase(id string) (f1Case, error) {
 
 func (app *SlackApp) getUser(username string) (f1User, error) {
 	var body f1User
-
 	url := "https://app.figure1.com/s/profile/public/" + username
-	req, err := http.NewRequest("GET", url, nil)
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", app.BearerToken)
 
-	// make the request
-	client := &http.Client{}
-	res, err := client.Do(req)
+	err := app.fig1Request(url, &body)
 	if err != nil {
-		return body, errors.New("Failed to create case http request")
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode == http.StatusUnauthorized {
-		fmt.Println("Need to relog")
-		if err = app.getBearerToken(); err == nil {
-			return app.getUser(username)
-		}
-
-		return body, errors.New("Failed to refresh bearer token")
-	}
-
-	if res.StatusCode != http.StatusOK {
-		fmt.Println("Failed to retrieve user profile")
-		return body, errors.New("Failed to retrieve user profile, please try again later")
-	}
-
-	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
-		fmt.Println("Failed to decode json, ", err)
 		return body, err
 	}
-
-	body.Category = body.SpecialtyObject.Category.Strings.Label
-	body.Specialty = body.SpecialtyObject.Strings.Label
 
 	return body, nil
 }
 
 func (app *SlackApp) getCollection(id string) (f1Collection, error) {
 	var body f1Collection
-
 	url := "https://api.figure1.com/collections/" + id
-	req, err := http.NewRequest("GET", url, nil)
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", app.BearerToken)
 
-	// make the request
-	client := &http.Client{}
-	res, err := client.Do(req)
+	err := app.fig1Request(url, &body)
 	if err != nil {
-		return body, errors.New("Failed to create collection http request")
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode == http.StatusUnauthorized {
-		fmt.Println("Need to relog")
-		if err = app.getBearerToken(); err == nil {
-			return app.getCollection(id)
-		}
-
-		return body, errors.New("Failed to refresh bearer token")
-	}
-
-	if res.StatusCode != http.StatusOK {
-		fmt.Println("Failed to retrieve collection", res.Status)
-		return body, errors.New("Failed to retrieve collection, please try again later")
-	}
-
-	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
-		fmt.Println("Failed to decode json, ", err)
 		return body, err
 	}
 
