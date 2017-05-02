@@ -137,7 +137,7 @@ func (app *SlackApp) fig1Request(url string, marsh f1Response) error {
 	if res.StatusCode == http.StatusUnauthorized {
 		fmt.Println("Need to relog")
 		if err = app.getBearerToken(); err != nil {
-			return errors.New("Failed to refresh auth token, please try again.")
+			return errors.New("Failed to refresh auth token, please try again")
 		}
 		return app.fig1Request(url, marsh)
 	}

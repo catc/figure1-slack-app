@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 )
@@ -19,6 +18,13 @@ const (
 	colorLightBlue = "#8bcaf1"
 	colorRed       = "#fd7f8a"
 )
+
+// SlackResponse is the wrapper for responding to slash commands
+type SlackResponse struct {
+	ResponseType string        `json:"response_type"`
+	Text         string        `json:"text,omitempty"`
+	Attachments  []*Attachment `json:"attachments"`
+}
 
 // Attachment is individual item when posting a message to slack
 type Attachment struct {
@@ -44,43 +50,16 @@ type Field struct {
 	Short bool   `json:"short,omitempty"`
 }
 
-func postSlackMessage(res http.ResponseWriter, channelID, username, token string, attachments []*Attachment) {
-	client := &http.Client{}
-
-	attachmentBytes, err := json.Marshal(attachments)
-	if (err) != nil {
-		msg := "Failed to marshal slack data to JSON"
-		(&slackError{msg, msg, err}).handleError(res)
-		return
+func respondToSlashCommand(res http.ResponseWriter, attachments []*Attachment) {
+	resp := &SlackResponse{
+		ResponseType: "in_channel",
+		Attachments:  attachments,
 	}
-	attachmentString := string(attachmentBytes)
-
-	// create form
-	vals := url.Values{}
-	vals.Add("token", token)
-	vals.Add("channel", channelID)
-	vals.Add("username", username)
-	// TODO - need to use oauth to retrieve user tokens and post on their behalf
-	// vals.Add("as_user", "true")
-	vals.Add("attachments", attachmentString)
-
-	// post as `x-www-form-urlencoded`
-	resp, err := client.PostForm(slackPostMsgLink, vals)
-	if err != nil {
-		msg := "Failed to connect to slack api"
-		(&slackError{msg, msg, err}).handleError(res)
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		msg := fmt.Sprintf("Posting to slack was not entirely successful (status: %v)", resp.Status)
-		(&slackError{"Posting to slack was not entirely successful", msg, nil}).handleError(res)
-		fmt.Println("body: ", resp.Body)
-	}
+	res.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(res).Encode(resp)
 }
 
-func generateCaseContent(res http.ResponseWriter, data *f1Case, channelID, username, token string) {
+func generateCaseContent(data *f1Case) []*Attachment {
 	attachments := []*Attachment{}
 
 	// author
@@ -120,11 +99,10 @@ func generateCaseContent(res http.ResponseWriter, data *f1Case, channelID, usern
 	}
 	attachments = append(attachments, &shareSection)
 
-	// send off to slack
-	postSlackMessage(res, channelID, username, token, attachments)
+	return attachments
 }
 
-func generateUserContent(res http.ResponseWriter, data *f1User, channelID, username, token string) {
+func generateUserContent(data *f1User) []*Attachment {
 	attachments := []*Attachment{}
 
 	// main section
@@ -202,11 +180,10 @@ func generateUserContent(res http.ResponseWriter, data *f1User, channelID, usern
 	}
 	attachments = append(attachments, &shareSection)
 
-	// send off to slack
-	postSlackMessage(res, channelID, username, token, attachments)
+	return attachments
 }
 
-func generateCollectionContent(res http.ResponseWriter, data *f1Collection, channelID, username, token string) {
+func generateCollectionContent(data *f1Collection) []*Attachment {
 	attachments := []*Attachment{}
 
 	// collection info
@@ -253,8 +230,7 @@ func generateCollectionContent(res http.ResponseWriter, data *f1Collection, chan
 	}
 	attachments = append(attachments, &shareSection)
 
-	// send off to slack
-	postSlackMessage(res, channelID, username, token, attachments)
+	return attachments
 }
 
 func caseLinkGen(linkType, val string) string {

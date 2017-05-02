@@ -87,11 +87,11 @@ func (app *SlackApp) handleCase(res http.ResponseWriter, body *slashCommandReque
 		return
 	}
 
-	// send data to slack service to format and post message
-	generateCaseContent(res, &f1Case, body.ChannelID, body.Username, app.OAuthAccessToken)
+	// generate content
+	attachments := generateCaseContent(&f1Case)
 
-	// send 204
-	res.WriteHeader(http.StatusNoContent)
+	// respond
+	respondToSlashCommand(res, attachments)
 }
 
 func (app *SlackApp) handleUser(res http.ResponseWriter, body *slashCommandRequestBody) {
@@ -111,11 +111,11 @@ func (app *SlackApp) handleUser(res http.ResponseWriter, body *slashCommandReque
 		return
 	}
 
-	// send data to slack service to format and post message
-	generateUserContent(res, &f1User, body.ChannelID, body.Username, app.OAuthAccessToken)
+	// generate content
+	attachments := generateUserContent(&f1User)
 
-	// send 204
-	res.WriteHeader(http.StatusNoContent)
+	// respond
+	respondToSlashCommand(res, attachments)
 }
 
 func (app *SlackApp) handleCollection(res http.ResponseWriter, body *slashCommandRequestBody) {
@@ -135,9 +135,9 @@ func (app *SlackApp) handleCollection(res http.ResponseWriter, body *slashComman
 		return
 	}
 
-	// send data to slack service to format and post message
-	generateCollectionContent(res, &f1Collection, body.ChannelID, body.Username, app.OAuthAccessToken)
+	// generate content
+	attachments := generateCollectionContent(&f1Collection)
 
-	// send 204
-	res.WriteHeader(http.StatusNoContent)
+	// respond
+	respondToSlashCommand(res, attachments)
 }
