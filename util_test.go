@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -15,7 +14,7 @@ func TestCaseIDParse(t *testing.T) {
 	for _, str := range valid {
 		id := getCaseID(str)
 		if id == "" {
-			t.Error(fmt.Sprintf("Expected case \"%v\" to be valid", str))
+			t.Errorf("Expected case \"%v\" to be valid", str)
 		}
 	}
 
@@ -25,7 +24,7 @@ func TestCaseIDParse(t *testing.T) {
 	for _, str := range invalid {
 		id := getCaseID(str)
 		if id != "" {
-			t.Error(fmt.Sprintf("Expected case \"%v\" to be invalid", str))
+			t.Errorf("Expected case \"%v\" to be invalid", str)
 		}
 	}
 }
@@ -39,7 +38,7 @@ func TestUsernameParse(t *testing.T) {
 	for _, str := range valid {
 		id := getUsername(str)
 		if id == "" {
-			t.Error(fmt.Sprintf("Expected user \"%v\" to be valid", str))
+			t.Errorf("Expected user \"%v\" to be valid", str)
 		}
 	}
 }
@@ -53,7 +52,7 @@ func TestCollectionIDParse(t *testing.T) {
 	for _, str := range valid {
 		id := getCollectionID(str)
 		if id == "" {
-			t.Error(fmt.Sprintf("Expected collection \"%v\" to be valid", str))
+			t.Errorf("Expected collection \"%v\" to be valid", str)
 		}
 	}
 }

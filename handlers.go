@@ -12,6 +12,10 @@ type slashCommandRequestBody struct {
 	Text      string
 }
 
+func (app *SlackApp) authHandler(res http.ResponseWriter, req *http.Request) {
+	fmt.Println("AUTH!", req.Method)
+}
+
 func (app *SlackApp) slashCommandHandler(res http.ResponseWriter, req *http.Request) {
 	if req.Method != "POST" {
 		res.WriteHeader(http.StatusMethodNotAllowed)

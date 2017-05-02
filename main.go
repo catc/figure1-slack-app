@@ -37,6 +37,7 @@ func main() {
 	mux.HandleFunc("/case", slackApp.slashCommandHandler)
 	mux.HandleFunc("/user", slackApp.slashCommandHandler)
 	mux.HandleFunc("/collection", slackApp.slashCommandHandler)
+	mux.HandleFunc("/auth", slackApp.authHandler)
 
 	server := &http.Server{
 		Addr:           address,

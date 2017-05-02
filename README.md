@@ -1,6 +1,5 @@
 # Figure 1 slackbot oembed
-
-Provides Figure 1 case oembed on slack.
+Add Figure 1 content functionality to slack.
 
 ## Configuration
 Create `conf.json` file with structure:

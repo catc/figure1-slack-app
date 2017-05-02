@@ -23,6 +23,7 @@ const (
 // Attachment is individual item when posting a message to slack
 type Attachment struct {
 	AuthorName string   `json:"author_name,omitempty"`
+	AuthorLink string   `json:"author_link,omitempty"`
 	Title      string   `json:"title,omitempty"`
 	Fallback   string   `json:"fallback,omitempty"`
 	TitleLink  string   `json:"title_link,omitempty"`
@@ -59,7 +60,8 @@ func postSlackMessage(res http.ResponseWriter, channelID, username, token string
 	vals.Add("token", token)
 	vals.Add("channel", channelID)
 	vals.Add("username", username)
-	vals.Add("as_user", "true")
+	// TODO - need to use oauth to retrieve user tokens and post on their behalf
+	// vals.Add("as_user", "true")
 	vals.Add("attachments", attachmentString)
 
 	// post as `x-www-form-urlencoded`
@@ -207,26 +209,13 @@ func generateUserContent(res http.ResponseWriter, data *f1User, channelID, usern
 func generateCollectionContent(res http.ResponseWriter, data *f1Collection, channelID, username, token string) {
 	attachments := []*Attachment{}
 
-	// author
-	author := data.Embedded.Authors[0]
-	authorSection := Attachment{
-		Title:     author.Username,
-		Text:      author.SpecialtyCategory + ", " + author.SpecialtyName,
-		TitleLink: userLinkGen(author.Username),
-		Fallback:  "FIGURE 1 COLLECTION: " + data.Title,
-	}
-	if author.TopContributor {
-		authorSection.Footer = "Top Contributor"
-		authorSection.FooterIcon = topContributorBadgeLink
-	} else if author.Verified {
-		authorSection.Footer = "Verified"
-		authorSection.FooterIcon = verifiedBadgeLink
-	}
-	attachments = append(attachments, &authorSection)
-
 	// collection info
+	author := data.Embedded.Authors[0]
 	mainSection := Attachment{
-		Title: data.Title,
+		AuthorLink: userLinkGen(author.Username),
+		AuthorName: author.Username,
+		Title:      data.Title,
+		Fallback:   "FIGURE 1 COLLECTION: " + data.Title,
 	}
 	if data.Size == 1 {
 		mainSection.Footer = "1 case"
