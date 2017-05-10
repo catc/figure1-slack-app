@@ -6,10 +6,11 @@ import (
 )
 
 type slashCommandRequestBody struct {
-	Token     string
-	ChannelID string
-	Username  string
-	Text      string
+	Token       string
+	ChannelID   string
+	Username    string
+	Text        string
+	ResponseURL string
 }
 
 func (app *SlackApp) authHandler(res http.ResponseWriter, req *http.Request) {
@@ -48,10 +49,11 @@ func (app *SlackApp) slashCommandHandler(res http.ResponseWriter, req *http.Requ
 
 	// body
 	body := slashCommandRequestBody{
-		Token:     req.FormValue("token"),
-		ChannelID: req.FormValue("channel_id"),
-		Username:  req.FormValue("user_name"),
-		Text:      req.FormValue("text"),
+		Token:       req.FormValue("token"),
+		ChannelID:   req.FormValue("channel_id"),
+		Username:    req.FormValue("user_name"),
+		Text:        req.FormValue("text"),
+		ResponseURL: req.FormValue("response_url"),
 	}
 
 	// check request token is valid
@@ -93,7 +95,7 @@ func (app *SlackApp) handleCase(res http.ResponseWriter, body *slashCommandReque
 	attachments := generateCaseContent(&f1Case)
 
 	// respond
-	respondToSlashCommand(res, attachments)
+	respondToSlashCommand(res, body.ResponseURL, attachments)
 }
 
 func (app *SlackApp) handleUser(res http.ResponseWriter, body *slashCommandRequestBody) {
@@ -117,7 +119,7 @@ func (app *SlackApp) handleUser(res http.ResponseWriter, body *slashCommandReque
 	attachments := generateUserContent(&f1User)
 
 	// respond
-	respondToSlashCommand(res, attachments)
+	respondToSlashCommand(res, body.ResponseURL, attachments)
 }
 
 func (app *SlackApp) handleCollection(res http.ResponseWriter, body *slashCommandRequestBody) {
@@ -141,5 +143,5 @@ func (app *SlackApp) handleCollection(res http.ResponseWriter, body *slashComman
 	attachments := generateCollectionContent(&f1Collection)
 
 	// respond
-	respondToSlashCommand(res, attachments)
+	respondToSlashCommand(res, body.ResponseURL, attachments)
 }

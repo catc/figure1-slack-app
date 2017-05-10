@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -50,13 +51,32 @@ type Field struct {
 	Short bool   `json:"short,omitempty"`
 }
 
-func respondToSlashCommand(res http.ResponseWriter, attachments []*Attachment) {
-	resp := &SlackResponse{
+func respondToSlashCommand(res http.ResponseWriter, url string, attachments []*Attachment) {
+	body := &SlackResponse{
 		ResponseType: "in_channel",
 		Attachments:  attachments,
 	}
-	res.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(res).Encode(resp)
+
+	// marshal body
+	reqBody := new(bytes.Buffer)
+	if err := json.NewEncoder(reqBody).Encode(body); err != nil {
+		msg := "Failed to encode slack JSON"
+		(&slackError{msg, msg, err}).handleError(res)
+		return
+	}
+
+	// create request
+	req, err := http.NewRequest("POST", url, reqBody)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		msg := "Failed to connect to slack api"
+		(&slackError{msg, msg, err}).handleError(res)
+		return
+	}
+	defer resp.Body.Close()
 }
 
 func generateCaseContent(data *f1Case) []*Attachment {
