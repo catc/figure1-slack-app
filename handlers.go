@@ -37,6 +37,8 @@ func (app *SlackApp) slashCommandHandler(res http.ResponseWriter, req *http.Requ
 		return
 	}
 
+	logErr("Request made to '%v'", req.URL.Path)
+
 	// parse form
 	if err := req.ParseForm(); err != nil {
 		msg := "Failed to parse body"

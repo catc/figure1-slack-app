@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 func getCaseID(text string) (id string) {
@@ -112,5 +113,16 @@ type slackError struct {
 
 func (err *slackError) handleError(res http.ResponseWriter) {
 	res.Write([]byte(err.ClientResp))
-	fmt.Println(err.Msg, err.Err)
+	logErr("%v %v", err.Msg, err.Err)
+}
+
+func logErr(format string, a ...interface{}) {
+	vals := append([]interface{}{getTimeStamp()}, a...)
+	str := "%v: " + format
+	fmt.Println(fmt.Sprintf(str, vals...))
+}
+
+func getTimeStamp() string {
+	now := time.Now()
+	return now.Format(time.RFC822)
 }

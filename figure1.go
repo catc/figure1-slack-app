@@ -143,8 +143,8 @@ func (app *SlackApp) fig1Request(url string, marsh f1Response) error {
 	}
 
 	if res.StatusCode != http.StatusOK {
-		fmt.Println("Failed to retrieve case", res.Status)
-		return errors.New("Failed to retrieve case, please try again later")
+		logErr("Failed to retrieve data from Figure 1 (status: %v)", res.Status)
+		return errors.New("Failed to retrieve data from Figure 1, please try again later")
 	}
 
 	if err := marsh.decode(res.Body); err != nil {
@@ -203,7 +203,8 @@ func (app *SlackApp) getBearerToken() error {
 	}
 	reqJSON, err := json.Marshal(reqBody)
 	if err != nil {
-		fmt.Println("Failed to marshal json, ", err)
+		logErr("Failed to marshal json: %v", err)
+		return err
 	}
 
 	url := "https://app.figure1.com/s/auth/login"
@@ -214,7 +215,7 @@ func (app *SlackApp) getBearerToken() error {
 	client := &http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Failed to connect to Figure 1 API, ", err)
+		logErr("Failed to connect to Figure 1 API: %v", err)
 		return errors.New("Failed to connect to Figure 1 API, try again later")
 	}
 	defer res.Body.Close()
@@ -229,7 +230,7 @@ func (app *SlackApp) getBearerToken() error {
 	}
 	var resBody resp
 	if err := json.NewDecoder(res.Body).Decode(&resBody); err != nil {
-		fmt.Println("Failed to decode response body, ", err)
+		logErr("Failed to decode response body: %v", err)
 		return errors.New("Failed to decode bearer response body")
 	}
 
