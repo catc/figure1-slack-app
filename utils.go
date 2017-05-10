@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -105,24 +108,83 @@ func truncateString(text string) string {
 	return text
 }
 
+/*
+	error handling
+*/
+
+type requestError struct {
+	ClientResp string
+	Msg        string
+	Err        error
+}
+
+func (err *requestError) handleError(res http.ResponseWriter) {
+	// log
+	logErr("%v %v", err.Msg, err.Err)
+
+	// send response to slack
+	if err.ClientResp == "" {
+		err.ClientResp = "Internal error"
+	}
+	res.Write([]byte(err.ClientResp))
+}
+
 type slackError struct {
 	ClientResp string
 	Msg        string
 	Err        error
 }
 
-func (err *slackError) handleError(res http.ResponseWriter) {
-	res.Write([]byte(err.ClientResp))
-	logErr("%v %v", err.Msg, err.Err)
+type slackErrorRequestBody struct {
+	ResponseType string `json:"response_type"`
+	Text         string `json:"text,omitempty"`
+}
+
+func (se *slackError) handleError(link string) {
+	// log
+	logErr("%v %v", se.Msg, se.Err)
+
+	// post error to `response_url`
+	if se.ClientResp == "" {
+		se.ClientResp = "Error fetching content"
+	}
+
+	body := &slackErrorRequestBody{
+		Text:         se.ClientResp,
+		ResponseType: "ephemeral",
+	}
+	reqBody := new(bytes.Buffer)
+	if err := json.NewEncoder(reqBody).Encode(body); err != nil {
+		logErr("Error marshaling slack error body: %v", err)
+		return
+	}
+
+	req, err := http.NewRequest("POST", link, reqBody)
+	if err != nil {
+		logErr("Error creating slack error request: %v", err)
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		logErr("Error making slack error request: %v", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		data, _ := ioutil.ReadAll(resp.Body)
+		logErr("Slack error request was not OK (status %v): %v", resp.StatusCode, string(data))
+		return
+	}
 }
 
 func logErr(format string, a ...interface{}) {
-	vals := append([]interface{}{getTimeStamp()}, a...)
+	now := time.Now()
+	timestamp := now.Format(time.RFC822)
+
+	vals := append([]interface{}{timestamp}, a...)
 	str := "%v: " + format
 	fmt.Println(fmt.Sprintf(str, vals...))
-}
-
-func getTimeStamp() string {
-	now := time.Now()
-	return now.Format(time.RFC822)
 }
