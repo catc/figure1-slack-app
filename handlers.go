@@ -93,7 +93,7 @@ func (app *SlackApp) handleCase(body *slashCommandRequestBody) {
 	}
 
 	// generate content
-	attachments := generateCaseContent(&f1Case)
+	attachments := generateCaseContent(&f1Case, body.Username)
 
 	// respond
 	respondToSlashCommand(body.ResponseURL, attachments)
@@ -117,7 +117,7 @@ func (app *SlackApp) handleUser(body *slashCommandRequestBody) {
 	}
 
 	// generate content
-	attachments := generateUserContent(&f1User)
+	attachments := generateUserContent(&f1User, body.Username)
 
 	// respond
 	respondToSlashCommand(body.ResponseURL, attachments)
@@ -141,7 +141,7 @@ func (app *SlackApp) handleCollection(body *slashCommandRequestBody) {
 	}
 
 	// generate content
-	attachments := generateCollectionContent(&f1Collection)
+	attachments := generateCollectionContent(&f1Collection, body.Username)
 
 	// respond
 	respondToSlashCommand(body.ResponseURL, attachments)

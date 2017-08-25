@@ -32,7 +32,7 @@ Add the following tokens to `conf.json`
 ### Supported commands
 In the slash command sections, add the following commands:
 
-#### case
+#### `/case`
 **command:** `/case`
 
 **url:** `https://catc-services.com/fig1-slack/case`
@@ -41,7 +41,7 @@ In the slash command sections, add the following commands:
 
 **usage hint:** [case url or case id]
 
-#### user
+#### `/user`
 **command:** `/user`
 
 **url:** `https://catc-services.com/fig1-slack/user`
@@ -50,7 +50,7 @@ In the slash command sections, add the following commands:
 
 **usage hint:** [username or profile url]
 
-#### collection
+#### `/collection`
 **command:** `/collection`
 
 **url:** `https://catc-services.com/fig1-slack/collection`
@@ -73,4 +73,11 @@ server {
 		proxy_pass http://slack_app/$1;
 	}
 }
+```
+
+### dev
+For local testing, stop service on gc instance, start on local machine and tunnel via:
+```
+$ ssh -vnNT -R 3400:localhost:3400 SSH_CONFIG
+// eg: ssh -vnNT -R 3400:localhost:3400 gc
 ```

@@ -79,7 +79,7 @@ func respondToSlashCommand(link string, attachments []*Attachment) {
 	defer resp.Body.Close()
 }
 
-func generateCaseContent(data *f1Case) []*Attachment {
+func generateCaseContent(data *f1Case, opUser string) []*Attachment {
 	attachments := []*Attachment{}
 
 	// author
@@ -113,16 +113,17 @@ func generateCaseContent(data *f1Case) []*Attachment {
 
 	// share links
 	shareSection := Attachment{
-		Title: "Share case link",
-		Text:  caseLinkGen("case", data.ID),
-		Color: colorLightBlue,
+		Title:  "Share case link",
+		Text:   caseLinkGen("case", data.ID),
+		Color:  colorLightBlue,
+		Footer: fmt.Sprintf("posted by @%v", opUser),
 	}
 	attachments = append(attachments, &shareSection)
 
 	return attachments
 }
 
-func generateUserContent(data *f1User) []*Attachment {
+func generateUserContent(data *f1User, opUser string) []*Attachment {
 	attachments := []*Attachment{}
 
 	// main section
@@ -194,16 +195,17 @@ func generateUserContent(data *f1User) []*Attachment {
 
 	// share links
 	shareSection := Attachment{
-		Title: "Share profile link",
-		Text:  userLinkGen(data.Username),
-		Color: colorLightBlue,
+		Title:  "Share profile link",
+		Text:   userLinkGen(data.Username),
+		Color:  colorLightBlue,
+		Footer: fmt.Sprintf("posted by @%v", opUser),
 	}
 	attachments = append(attachments, &shareSection)
 
 	return attachments
 }
 
-func generateCollectionContent(data *f1Collection) []*Attachment {
+func generateCollectionContent(data *f1Collection, opUser string) []*Attachment {
 	attachments := []*Attachment{}
 
 	// collection info
@@ -244,9 +246,10 @@ func generateCollectionContent(data *f1Collection) []*Attachment {
 
 	// share links
 	shareSection := Attachment{
-		Title: "Share collection link",
-		Text:  collectionLinkGen(data.ID),
-		Color: colorLightBlue,
+		Title:  "Share collection link",
+		Text:   collectionLinkGen(data.ID),
+		Color:  colorLightBlue,
+		Footer: fmt.Sprintf("posted by @%v", opUser),
 	}
 	attachments = append(attachments, &shareSection)
 
