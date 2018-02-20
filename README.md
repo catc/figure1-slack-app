@@ -4,7 +4,7 @@ Add Figure 1 content functionality to slack.
 ## Configuration
 Create `conf.json` file with structure:
 
-```
+```json
 {
 	"email": "EMAIL",
 	"password": "PASSWORD",
@@ -12,6 +12,8 @@ Create `conf.json` file with structure:
 	"verification_token": "VERIFICATION_TOKEN"
 }
 ```
+
+**TODO:** switch from conf.json to just env variables.
 
 ## Adding app to slack
 Name: **Figure 1 Slack App**
